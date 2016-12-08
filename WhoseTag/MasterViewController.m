@@ -8,6 +8,7 @@
 
 #import "MasterViewController.h"
 #import "DetailViewController.h"
+#import "Ugi.h"
 
 @interface MasterViewController ()
 
@@ -23,8 +24,49 @@
     UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(insertNewObject:)];
     self.navigationItem.rightBarButtonItem = addButton;
     self.detailViewController = (DetailViewController *)[[self.splitViewController.viewControllers lastObject] topViewController];
+    [[Ugi singleton] openConnection];
+    
+    UgiRfidConfiguration *config = [UgiRfidConfiguration
+                                    configWithInventoryType:UGI_INVENTORY_TYPE_LOCATE_DISTANCE];
+    [config setMaxTidBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
+    [config setMaxUserBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
+    [config setMaxReservedBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
+    [config setVolume:0.01];
+    
+    
+    UgiInventory *inventory = [[Ugi singleton] startInventory:self    // delegate object
+                                            withConfiguration:config];
+
 }
 
+- (void) inventoryTagFound:(UgiTag *)tag
+   withDetailedPerReadData:(NSArray *)detailedPerReadData {
+    
+    NSManagedObjectContext *context = [self.fetchedResultsController managedObjectContext];
+    Event *newEvent = [[Event alloc] initWithContext:context];
+    
+    // If appropriate, configure the new managed object.
+    newEvent.tagepc = [tag epc];
+    newEvent.tagtid = [tag tidMemory];
+    
+    // Save the context.
+    NSError *error = nil;
+    if (![context save:&error]) {
+        // Replace this implementation with code to handle the error appropriately.
+        // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+        NSLog(@"Unresolved error %@, %@", error, error.userInfo);
+        abort();
+    }
+    
+    NSLog(@"TAG FOUND %@ %@", [[tag epc] description], [[tag tidMemory] description]);
+}
+
+- (void) inventoryTagSubsequentFinds:(UgiTag *)tag numFinds:(int)num
+             withDetailedPerReadData:(NSArray *)detailedPerReadData {
+    NSLog(@"TAG FOUND REFOUND %@ %@", [[tag epc] description], [[tag tidMemory] description]);
+
+    // tag found count more times
+}
 
 - (void)viewWillAppear:(BOOL)animated {
     self.clearsSelectionOnViewWillAppear = self.splitViewController.isCollapsed;
@@ -36,7 +78,6 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
 
 - (void)insertNewObject:(id)sender {
     NSManagedObjectContext *context = [self.fetchedResultsController managedObjectContext];
@@ -114,7 +155,14 @@
 
 
 - (void)configureCell:(UITableViewCell *)cell withEvent:(Event *)event {
-    cell.textLabel.text = event.timestamp.description;
+    
+    if ( event.tagepc != NULL )
+    {
+        cell.textLabel.text = event.tagtid;
+    }
+    else{
+        cell.textLabel.text = event.timestamp.description;
+    }
 }
 
 

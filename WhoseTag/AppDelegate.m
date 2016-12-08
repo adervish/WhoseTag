@@ -9,6 +9,7 @@
 #import "AppDelegate.h"
 #import "DetailViewController.h"
 #import "MasterViewController.h"
+#import "Ugi.h"
 
 @interface AppDelegate () <UISplitViewControllerDelegate>
 
@@ -56,6 +57,7 @@
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     // Saves changes in the application's managed object context before the application terminates.
+    [Ugi releaseSingleton];
     [self saveContext];
 }
 

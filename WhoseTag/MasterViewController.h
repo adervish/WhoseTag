@@ -9,10 +9,11 @@
 #import <UIKit/UIKit.h>
 #import <CoreData/CoreData.h>
 #import "WhoseTag+CoreDataModel.h"
+#import "Ugi.h"
 
 @class DetailViewController;
 
-@interface MasterViewController : UITableViewController <NSFetchedResultsControllerDelegate>
+@interface MasterViewController : UITableViewController <NSFetchedResultsControllerDelegate,UgiInventoryDelegate>
 
 @property (strong, nonatomic) DetailViewController *detailViewController;
 
