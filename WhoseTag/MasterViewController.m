@@ -22,6 +22,7 @@
     self.navigationItem.leftBarButtonItem = self.editButtonItem;
 
     UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(insertNewObject:)];
+    
     self.navigationItem.rightBarButtonItem = addButton;
     self.detailViewController = (DetailViewController *)[[self.splitViewController.viewControllers lastObject] topViewController];
     [[Ugi singleton] openConnection];
@@ -29,10 +30,9 @@
     UgiRfidConfiguration *config = [UgiRfidConfiguration
                                     configWithInventoryType:UGI_INVENTORY_TYPE_LOCATE_DISTANCE];
     [config setMaxTidBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
-    [config setMaxUserBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
-    [config setMaxReservedBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
-    [config setVolume:0.01];
-    
+    //[config setMaxUserBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
+    //[config setMaxReservedBytes:[UgiRfidConfiguration getMaxAllowableMemoryBankBytes]];
+    [config setVolume:0.001];
     
     UgiInventory *inventory = [[Ugi singleton] startInventory:self    // delegate object
                                             withConfiguration:config];
@@ -46,9 +46,11 @@
     Event *newEvent = [[Event alloc] initWithContext:context];
     
     // If appropriate, configure the new managed object.
-    newEvent.tagepc = [tag epc];
-    newEvent.tagtid = [tag tidMemory];
-    
+    newEvent.tagepc = [NSData dataWithBytes:[[tag epc] bytes] length:[[tag epc] length]];
+    newEvent.tagtid = [NSData dataWithBytes:[[tag tidMemory] bytes] length:[[tag tidMemory] length]];
+    newEvent.tagmodel = [NSData dataWithBytes:[[tag tidMemory] bytes] length:MIN([[tag tidMemory] length], 4)];
+    NSLog(@"TAG FOUND REFOUND %@ %@", [[tag epc] description], [[tag tidMemory] description]);
+
     // Save the context.
     NSError *error = nil;
     if (![context save:&error]) {
@@ -153,18 +155,16 @@
     }
 }
 
-
 - (void)configureCell:(UITableViewCell *)cell withEvent:(Event *)event {
     
-    if ( event.tagepc != NULL )
+    if ( event.tagmodel != nil )
     {
-        cell.textLabel.text = event.tagtid;
+        cell.textLabel.text = [event.tagmodel description];
     }
     else{
         cell.textLabel.text = event.timestamp.description;
     }
 }
-
 
 #pragma mark - Fetched results controller
 
