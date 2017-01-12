@@ -43,22 +43,47 @@
    withDetailedPerReadData:(NSArray *)detailedPerReadData {
     
     NSManagedObjectContext *context = [self.fetchedResultsController managedObjectContext];
-    Event *newEvent = [[Event alloc] initWithContext:context];
+
+
     
     // If appropriate, configure the new managed object.
-    newEvent.tagepc = [NSData dataWithBytes:[[tag epc] bytes] length:[[tag epc] length]];
-    newEvent.tagtid = [NSData dataWithBytes:[[tag tidMemory] bytes] length:[[tag tidMemory] length]];
-    newEvent.tagmodel = [NSData dataWithBytes:[[tag tidMemory] bytes] length:MIN([[tag tidMemory] length], 4)];
+
     NSLog(@"TAG FOUND REFOUND %@ %@", [[tag epc] description], [[tag tidMemory] description]);
 
-    // Save the context.
+    NSFetchRequest *request = [[NSFetchRequest alloc] init];
+    [request setEntity:[NSEntityDescription entityForName:@"Event" inManagedObjectContext:context]];
+    //[NSData dataWithBytes:[[tag tidMemory] bytes] length:MIN([[tag tidMemory] length], 4)]]
+
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"tagmodel == %@", @"hello"];
+    [request setPredicate:predicate];
+    
     NSError *error = nil;
+    NSArray *results = [context executeFetchRequest:request error:&error];
+    
+    if (results.count > 0)
+    {
+        NSLog(@"update");
+    }
+    else
+    {
+        NSLog(@"new");
+
+        Event *newEvent = [[Event alloc] initWithContext:context];
+        newEvent.tagepc = [NSData dataWithBytes:[[tag epc] bytes] length:[[tag epc] length]];
+        newEvent.tagtid = [NSData dataWithBytes:[[tag tidMemory] bytes] length:[[tag tidMemory] length]];
+        newEvent.tagmodel = [NSData dataWithBytes:[[tag tidMemory] bytes] length:MIN([[tag tidMemory] length], 4)];
+    }
+    
+    // Save the context.
+    error = nil;
     if (![context save:&error]) {
         // Replace this implementation with code to handle the error appropriately.
         // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
         NSLog(@"Unresolved error %@, %@", error, error.userInfo);
         abort();
     }
+    
+    
     
     NSLog(@"TAG FOUND %@ %@", [[tag epc] description], [[tag tidMemory] description]);
 }
